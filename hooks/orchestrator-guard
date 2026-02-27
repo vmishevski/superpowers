@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# ABOUTME: PreToolUse hook that classifies tool calls as planning or implementation.
+# ABOUTME: Blocks implementation actions when active, forcing orchestrator to dispatch subagents.
+set -euo pipefail
+
+# Read tool call context from stdin
+INPUT=$(cat)
+
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name')
+TOOL_INPUT=$(echo "$INPUT" | jq -c '.tool_input')
+
+# No API key -- allow by default (hook is opt-in)
+if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+    exit 0
+fi
+
+# Build the classification prompt
+PROMPT="You are classifying a tool call as either PLANNING or IMPLEMENTATION.
+
+PLANNING actions (ALLOW): writing/editing plan documents (docs/plans/), reading code to understand it, running read-only git commands (git log, git status, git diff), searching files with grep/glob, creating directories for reports.
+
+IMPLEMENTATION actions (DENY): editing source code, editing test files, editing config files (not plan docs), running tests, running linters, running build commands, running any command that modifies project state.
+
+Tool: $TOOL_NAME
+Input: $TOOL_INPUT
+
+Respond with exactly one word: PLANNING or IMPLEMENTATION"
+
+# Call Haiku for classification
+RESPONSE=$(curl -s --max-time 10 \
+    https://api.anthropic.com/v1/messages \
+    -H "content-type: application/json" \
+    -H "x-api-key: $ANTHROPIC_API_KEY" \
+    -H "anthropic-version: 2023-06-01" \
+    -d "$(jq -n \
+        --arg prompt "$PROMPT" \
+        '{
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 10,
+            messages: [{role: "user", content: $prompt}]
+        }'
+    )")
+
+CLASSIFICATION=$(echo "$RESPONSE" | jq -r '.content[0].text // "PLANNING"' | tr -d '[:space:]')
+
+if [ "$CLASSIFICATION" = "IMPLEMENTATION" ]; then
+    REASON="You are the orchestrator. You MUST NOT do implementation work directly. Dispatch a subagent instead. Tool blocked: $TOOL_NAME"
+    jq -n \
+        --arg reason "$REASON" \
+        '{
+            hookSpecificOutput: {
+                hookEventName: "PreToolUse",
+                permissionDecision: "deny",
+                permissionDecisionReason: $reason
+            }
+        }'
+else
+    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+fi
