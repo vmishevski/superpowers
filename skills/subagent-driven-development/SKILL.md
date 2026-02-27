@@ -114,9 +114,10 @@ Subagents write detailed output to `.superpowers/reports/` and return short summ
 - `.superpowers/reports/task-N-spec-review.md` — spec reviewer's detailed report
 - `.superpowers/reports/task-N-quality-review.md` — code quality reviewer's report
 
-**Before dispatching the first task**, create the reports directory:
+**Before dispatching the first task**, create the reports directory and activate orchestrator mode:
 ```bash
 mkdir -p .superpowers/reports
+touch .superpowers/orchestrator-mode
 ```
 
 ## Prompt Templates
@@ -134,6 +135,7 @@ You: I'm using Subagent-Driven Development to execute this plan.
 [Extract all 5 tasks with full text and context]
 [Create TodoWrite with all tasks]
 [mkdir -p .superpowers/reports]
+[touch .superpowers/orchestrator-mode]
 
 Task 1: Hook installation script
 

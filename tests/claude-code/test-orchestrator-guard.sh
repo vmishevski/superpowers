@@ -6,6 +6,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOOK_DIR="$(cd "$SCRIPT_DIR/../../hooks" && pwd)"
 
+# Create sentinel file so the hook activates (it early-exits without it)
+mkdir -p .superpowers
+touch .superpowers/orchestrator-mode
+trap 'rm -f .superpowers/orchestrator-mode && rmdir .superpowers 2>/dev/null' EXIT
+
 HAS_API_KEY=false
 if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
     HAS_API_KEY=true

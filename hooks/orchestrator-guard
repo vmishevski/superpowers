@@ -9,6 +9,12 @@ INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name')
 TOOL_INPUT=$(echo "$INPUT" | jq -c '.tool_input')
 
+# Only activate in orchestrator mode (sentinel file created by subagent-driven-development)
+if [ ! -f ".superpowers/orchestrator-mode" ]; then
+    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
+    exit 0
+fi
+
 # No API key -- allow by default (hook is opt-in)
 if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
     echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow"}}'
