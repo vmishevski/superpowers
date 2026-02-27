@@ -83,10 +83,27 @@ Task tool (general-purpose):
 
     ## Report Format
 
-    When done, report:
-    - What you implemented
-    - What you tested and test results
-    - Files changed
-    - Self-review findings (if any)
+    When done, write your detailed report to a file and return a summary.
+
+    **Step 1: Write detailed report to file**
+
+    Write to `.superpowers/reports/task-N-implementation.md`:
+    - What you implemented (with file:line references)
+    - What you tested and full test output
+    - Files changed (with descriptions)
+    - Self-review findings and what you fixed
     - Any issues or concerns
+
+    **Step 2: Return summary to orchestrator**
+
+    Your return message should be SHORT (under 10 lines):
+    - Status: DONE or BLOCKED
+    - Files created/modified (paths only)
+    - Commit SHA
+    - Test result (X/Y passing)
+    - Blockers (if any)
+    - Report path: `.superpowers/reports/task-N-implementation.md`
+
+    The orchestrator makes routing decisions from your summary.
+    The next reviewer reads your detailed report from the file.
 ```
