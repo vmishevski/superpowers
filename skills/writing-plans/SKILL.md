@@ -37,7 +37,11 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Goal:** [One sentence describing what this builds]
 
-**Architecture:** [2-3 sentences about approach]
+**Approach:** [2-3 sentences about the chosen approach and WHY this approach over alternatives]
+
+**Alternatives considered:** [Brief list of rejected approaches with one-line reasons]
+
+**Key assumptions:** [What are we assuming that, if wrong, would invalidate this plan?]
 
 **Tech Stack:** [Key technologies/libraries]
 
