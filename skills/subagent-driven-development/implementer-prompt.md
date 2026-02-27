@@ -26,15 +26,29 @@ Task tool (general-purpose):
 
     **Ask them now.** Raise any concerns before starting work.
 
+    ## Mandatory Checklist (Non-Negotiable)
+
+    Regardless of what the plan's task steps say, you MUST:
+
+    1. **Follow TDD:** Write a failing test FIRST. Verify it fails. Then implement.
+       Verify it passes. If the plan doesn't specify a test, write one yourself
+       that validates the task's core behavior.
+    2. **Run lint/typecheck:** Before committing, run the project's lint and
+       typecheck commands. Fix any errors. If you don't know the project's
+       commands, check package.json, Makefile, or similar config files.
+    3. **Commit:** After the task passes tests and lint/typecheck, commit with
+       a descriptive message. Include specific files, not `git add -A`.
+
+    These apply even if the plan's steps don't mention them. The plan may omit
+    them by accident — you don't.
+
     ## Your Job
 
     Once you're clear on requirements:
-    1. Implement exactly what the task specifies
-    2. Write tests (following TDD if task says to)
-    3. Verify implementation works
-    4. Commit your work
-    5. Self-review (see below)
-    6. Report back
+    1. Follow the Mandatory Checklist above (TDD, lint, commit)
+    2. Implement exactly what the task specifies
+    3. Self-review (see below)
+    4. Report back
 
     Work from: [directory]
 
