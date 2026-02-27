@@ -82,6 +82,43 @@ digraph process {
 }
 ```
 
+## Orchestrator Role (HARD RULES)
+
+You are the orchestrator. Your job is routing and coordination. You dispatch subagents, read their summaries, and decide what happens next.
+
+**You MUST NOT:**
+- Edit or write source code, test files, or configuration files
+- Run tests, linters, typecheckers, or build commands
+- Run any Bash command that modifies state (only read-only git commands are allowed)
+- Fix issues yourself — dispatch a subagent to fix them
+
+**You MAY:**
+- Read files to understand context
+- Use Glob/Grep to find files
+- Run `git log`, `git status`, `git diff` (read-only git)
+- Write to `docs/plans/` (plan files only)
+
+**If you feel the urge to "just quickly fix" something, STOP. Dispatch a subagent.**
+
+## File-Based Handoff
+
+Subagents write detailed output to `.superpowers/reports/` and return short summaries.
+
+**As orchestrator, you:**
+1. Read the subagent's summary (under 10 lines) to make routing decisions
+2. Pass the report file path to the next subagent in the chain
+3. NEVER ask a subagent to repeat information that's already in a report file
+
+**Report file naming:**
+- `.superpowers/reports/task-N-implementation.md` — implementer's detailed report
+- `.superpowers/reports/task-N-spec-review.md` — spec reviewer's detailed report
+- `.superpowers/reports/task-N-quality-review.md` — code quality reviewer's report
+
+**Before dispatching the first task**, create the reports directory:
+```bash
+mkdir -p .superpowers/reports
+```
+
 ## Prompt Templates
 
 - `./implementer-prompt.md` - Dispatch implementer subagent
@@ -96,71 +133,65 @@ You: I'm using Subagent-Driven Development to execute this plan.
 [Read plan file once: docs/plans/feature-plan.md]
 [Extract all 5 tasks with full text and context]
 [Create TodoWrite with all tasks]
+[mkdir -p .superpowers/reports]
 
 Task 1: Hook installation script
 
 [Get Task 1 text and context (already extracted)]
 [Dispatch implementation subagent with full task text + context]
 
-Implementer: "Before I begin - should the hook be installed at user or system level?"
+Implementer returns summary:
+  Status: DONE
+  Files: src/install-hook.js, tests/install-hook.test.js
+  Commit: abc1234
+  Tests: 5/5 passing
+  Report: .superpowers/reports/task-1-implementation.md
 
-You: "User level (~/.config/superpowers/hooks/)"
+[Dispatch spec reviewer with task requirements + report path]
+Spec reviewer returns:
+  ✅ Spec compliant and system intact
+  Report: .superpowers/reports/task-1-spec-review.md
 
-Implementer: "Got it. Implementing now..."
-[Later] Implementer:
-  - Implemented install-hook command
-  - Added tests, 5/5 passing
-  - Self-review: Found I missed --force flag, added it
-  - Committed
-
-[Dispatch spec compliance reviewer]
-Spec reviewer: ✅ Spec compliant - all requirements met, nothing extra
-
-[Get git SHAs, dispatch code quality reviewer]
-Code reviewer: Strengths: Good test coverage, clean. Issues: None. Approved.
+[Dispatch code quality reviewer with SHAs + report paths]
+Code reviewer returns:
+  Strengths: Good test coverage, clean implementation
+  Issues: 0 critical, 0 important, 0 minor
+  Assessment: Ready to merge
+  Report: .superpowers/reports/task-1-quality-review.md
 
 [Mark Task 1 complete]
 
 Task 2: Recovery modes
 
-[Get Task 2 text and context (already extracted)]
 [Dispatch implementation subagent with full task text + context]
 
-Implementer: [No questions, proceeds]
-Implementer:
-  - Added verify/repair modes
-  - 8/8 tests passing
-  - Self-review: All good
-  - Committed
+Implementer returns summary:
+  Status: DONE
+  Files: src/recovery.js, tests/recovery.test.js
+  Commit: def5678
+  Tests: 8/8 passing
+  Report: .superpowers/reports/task-2-implementation.md
 
-[Dispatch spec compliance reviewer]
-Spec reviewer: ❌ Issues:
-  - Missing: Progress reporting (spec says "report every 100 items")
-  - Extra: Added --json flag (not requested)
+[Dispatch spec reviewer with task requirements + report path]
+Spec reviewer returns:
+  ❌ Issues: 1 spec issue, 0 integrity issues
+  Report: .superpowers/reports/task-2-spec-review.md
 
-[Implementer fixes issues]
-Implementer: Removed --json flag, added progress reporting
+[Dispatch implementer to fix — pass spec review report path]
+Implementer returns summary:
+  Status: DONE (fixes applied)
+  Commit: ghi9012
+  Report: .superpowers/reports/task-2-implementation-fix.md
 
-[Spec reviewer reviews again]
-Spec reviewer: ✅ Spec compliant now
+[Re-dispatch spec reviewer]
+Spec reviewer returns:
+  ✅ Spec compliant and system intact
 
 [Dispatch code quality reviewer]
-Code reviewer: Strengths: Solid. Issues (Important): Magic number (100)
-
-[Implementer fixes]
-Implementer: Extracted PROGRESS_INTERVAL constant
-
-[Code reviewer reviews again]
-Code reviewer: ✅ Approved
-
-[Mark Task 2 complete]
-
 ...
 
 [After all tasks]
 [Dispatch final code-reviewer]
-Final reviewer: All requirements met, ready to merge
-
 Done!
 ```
 
