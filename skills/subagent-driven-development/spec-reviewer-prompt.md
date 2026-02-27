@@ -1,14 +1,15 @@
-# Spec Compliance Reviewer Prompt Template
+# Spec Compliance and System Integrity Reviewer Prompt Template
 
 Use this template when dispatching a spec compliance reviewer subagent.
 
-**Purpose:** Verify implementer built what was requested (nothing more, nothing less)
+**Purpose:** Verify implementer built what was requested AND left the system in a working state.
 
 ```
 Task tool (general-purpose):
-  description: "Review spec compliance for Task N"
+  description: "Review spec compliance and system integrity for Task N"
   prompt: |
-    You are reviewing whether an implementation matches its specification.
+    You are reviewing whether an implementation matches its specification
+    and whether it left the surrounding system intact.
 
     ## What Was Requested
 
@@ -16,7 +17,11 @@ Task tool (general-purpose):
 
     ## What Implementer Claims They Built
 
-    [From implementer's report]
+    [From implementer's SUMMARY — short status message]
+
+    ## Detailed Implementation Report
+
+    Read the implementer's full report at: [path to .superpowers/reports/task-N-implementation.md]
 
     ## CRITICAL: Do Not Trust the Report
 
@@ -34,7 +39,7 @@ Task tool (general-purpose):
     - Check for missing pieces they claimed to implement
     - Look for extra features they didn't mention
 
-    ## Your Job
+    ## Part 1: Spec Compliance
 
     Read the implementation code and verify:
 
@@ -53,9 +58,40 @@ Task tool (general-purpose):
     - Did they solve the wrong problem?
     - Did they implement the right feature but wrong way?
 
-    **Verify by reading code, not by trusting report.**
+    ## Part 2: System Integrity
 
-    Report:
-    - ✅ Spec compliant (if everything matches after code inspection)
-    - ❌ Issues found: [list specifically what's missing or extra, with file:line references]
+    The implementer may have satisfied the task requirements but broken
+    something else. Check:
+
+    **Run tests for modified files and dependents:**
+    - Identify which files were modified
+    - Find test files that cover those modules
+    - Find tests for code that imports from modified files
+    - Run those tests. Report any failures.
+
+    **Run lint/typecheck:**
+    - Run the project's lint and typecheck commands
+    - Report any errors, even if they seem unrelated to the task
+
+    **Check blast radius:**
+    - For each modified file, grep for other files that import from it
+    - Did a changed export, renamed function, or modified type break a consumer?
+    - Did an interface or type change propagate correctly to all users?
+
+    **Verify shared contracts:**
+    - If the task touched types, interfaces, constants, or config that other
+      code depends on, check those dependents
+    - Look for runtime assumptions that may now be violated
+
+    ## Output
+
+    Write your detailed review to `.superpowers/reports/task-N-spec-review.md`:
+    - Full analysis of spec compliance
+    - Full analysis of system integrity
+    - All issues with file:line references
+
+    Return summary to orchestrator (under 10 lines):
+    - ✅ Spec compliant and system intact, OR
+    - ❌ Issues found: [count] spec issues, [count] integrity issues
+    - Report path: `.superpowers/reports/task-N-spec-review.md`
 ```
