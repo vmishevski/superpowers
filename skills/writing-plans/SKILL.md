@@ -48,7 +48,9 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 ---
 ```
 
-## Task Structure
+## Mandatory Task Structure
+
+Every task MUST follow this skeleton. The plan author fills in specifics, but the structure is non-negotiable.
 
 ````markdown
 ### Task N: [Component Name]
@@ -56,40 +58,45 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 **Files:**
 - Create: `exact/path/to/file.py`
 - Modify: `exact/path/to/existing.py:123-145`
-- Test: `tests/exact/path/to/test.py`
+
+**Test:** `tests/exact/path/to/test.py` — [what behavior this test validates]
+
+If this task genuinely does not need a test (e.g., config-only change, documentation), state why: **No test because:** [reason]
 
 **Step 1: Write the failing test**
 
-```python
-def test_specific_behavior():
-    result = function(input)
-    assert result == expected
-```
+[Exact test code]
 
 **Step 2: Run test to verify it fails**
 
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: FAIL with "function not defined"
+Run: `[exact test command]`
+Expected: FAIL with "[expected failure message]"
 
 **Step 3: Write minimal implementation**
 
-```python
-def function(input):
-    return expected
-```
+[Exact implementation code]
 
 **Step 4: Run test to verify it passes**
 
-Run: `pytest tests/path/test.py::test_name -v`
+Run: `[exact test command]`
 Expected: PASS
 
-**Step 5: Commit**
+**Step 5: Lint and typecheck**
 
-```bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
-```
+Run: `[project-specific lint/typecheck command]`
+Expected: No errors
+
+**Step 6: Commit**
+
+[Exact git add and commit commands]
 ````
+
+**What MUST be in every task:**
+- **Test:** Either a test file and what it validates, or an explicit "No test because" with a reason
+- **Lint/typecheck step:** Always present. The project's lint and typecheck commands.
+- **Commit step:** Always present. Specific files to add and a descriptive commit message.
+
+These are not optional. If a plan author omits them, the plan is incomplete.
 
 ## Remember
 - Exact file paths always
