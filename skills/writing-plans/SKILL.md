@@ -105,6 +105,25 @@ These are not optional. If a plan author omits them, the plan is incomplete.
 - Reference relevant skills with @ syntax
 - DRY, YAGNI, TDD, frequent commits
 
+## Plan Challenge (Devil's Advocate)
+
+After writing the plan but BEFORE presenting it to the user, dispatch a devil's advocate subagent using the template at `./advocate-prompt.md`.
+
+**Process:**
+1. Dispatch advocate subagent with full plan text and design/requirements text
+2. Review advocate's output:
+   - **Auto-fix items** (missing tasks, traceability gaps): Incorporate into the plan immediately
+   - **Open challenges** (questionable assumptions, alternative approaches): Present to user
+3. If auto-fixes were made, update the plan document
+4. Present the plan AND open challenges to the user with options:
+   - **Accept plan** — proceed to execution
+   - **Update plan** — revise based on challenges, re-run advocate if changes are significant
+   - **Back to brainstorming** — a challenge revealed a fundamental issue with the approach
+
+**The plan is not complete until it has survived the advocate.**
+
+Do NOT skip this step. Do NOT present the plan to the user before running the advocate.
+
 ## Execution Handoff
 
 After saving the plan, offer execution choice:
