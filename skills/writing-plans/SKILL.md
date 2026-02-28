@@ -62,6 +62,7 @@ Every task MUST follow this skeleton. The plan author fills in specifics, but th
 **Test:** `tests/exact/path/to/test.py` — [what behavior this test validates]
 
 If this task genuinely does not need a test (e.g., config-only change, documentation), state why: **No test because:** [reason]
+At each task, we will run lint, typecheck and tests. These MUST be passing before we commit. 
 
 **Step 1: Write the failing test**
 
@@ -92,8 +93,8 @@ Expected: No errors
 ````
 
 **What MUST be in every task:**
-- **Test:** Either a test file and what it validates, or an explicit "No test because" with a reason
-- **Lint/typecheck step:** Always present. The project's lint and typecheck commands.
+- **Test:** Either a test file and what it validates, or an explicit "No test because" with a reason, must pass before committing.
+- **Lint/typecheck step:** Always present. The project's lint and typecheck commands. These must pass before committing. 
 - **Commit step:** Always present. Specific files to add and a descriptive commit message.
 
 These are not optional. If a plan author omits them, the plan is incomplete.
