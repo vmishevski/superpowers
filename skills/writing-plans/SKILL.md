@@ -7,24 +7,26 @@ description: Use when you have a spec or requirements for a multi-step task, bef
 
 ## Overview
 
-Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+Write comprehensive implementation plans based on the design document. 
+Your goal is to divide the implementation into multiple tasks. 
+Each task achieves a meaningful addition towards the goal. The task is self sufficient and can be evaluated on it's own. 
+Write clear and concise acceptance criterias for each task.
+Write technical specification on how to achive the acceptance.  
+Do not write exact code in the task. Write 
+Document everything the implementer will need to know:
+   - which files are relevant
+   - what is the outcome of the task
+   - how can the task be tested and what tests casees should be covered
+   - docs the implementer will need to check
+For each task to be complete, the implementer will need to run tests, linter, prettier and those should be passing.
+Frequent commits. Commits at the end of the task, as final step. 
+Task contains dependencies to other tasks, if there are any. 
 
 Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be run in a dedicated worktree (created by brainstorming skill).
-
 **Save plans to:** `docs/plans/YYYY-MM-DD-<feature-name>.md`
-
-## Bite-Sized Task Granularity
-
-**Each step is one action (2-5 minutes):**
-- "Write the failing test" - step
-- "Run it to make sure it fails" - step
-- "Implement the minimal code to make the test pass" - step
-- "Run the tests and make sure they pass" - step
-- "Commit" - step
 
 ## Plan Document Header
 
@@ -33,9 +35,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
-**Goal:** [One sentence describing what this builds]
+**Goal:** [One paragraph describing what this builds]
 
 **Approach:** [2-3 sentences about the chosen approach and WHY this approach over alternatives]
 
@@ -48,52 +48,12 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 ---
 ```
 
-## Mandatory Task Structure
-
-Every task MUST follow this skeleton. The plan author fills in specifics, but the structure is non-negotiable.
-
-````markdown
-### Task N: [Component Name]
-
-**Files:**
-- Create: `exact/path/to/file.py`
-- Modify: `exact/path/to/existing.py:123-145`
-
-**Test:** `tests/exact/path/to/test.py` — [what behavior this test validates]
-
-If this task genuinely does not need a test (e.g., config-only change, documentation), state why: **No test because:** [reason]
-At each task, we will run lint, typecheck and tests. These MUST be passing before we commit. 
-
-**Step 1: Write the failing test**
-
-[Exact test code]
-
-**Step 2: Run test to verify it fails**
-
-Run: `[exact test command]`
-Expected: FAIL with "[expected failure message]"
-
-**Step 3: Write minimal implementation**
-
-[Exact implementation code]
-
-**Step 4: Run test to verify it passes**
-
-Run: `[exact test command]`
-Expected: PASS
-
-**Step 5: Lint and typecheck**
-
-Run: `[project-specific lint/typecheck command]`
-Expected: No errors
-
-**Step 6: Commit**
-
-[Exact git add and commit commands]
-````
+## Task Structure
 
 **What MUST be in every task:**
-- **Test:** Either a test file and what it validates, or an explicit "No test because" with a reason, must pass before committing.
+- **Acceptance Criterias** Clear acceptance criteria of what is the outcome of the task.
+- **Technical Specification** How to achieve the goal.
+- **Tests:** Test cases that should be covered with tests
 - **Lint/typecheck step:** Always present. The project's lint and typecheck commands. These must pass before committing. 
 - **Commit step:** Always present. Specific files to add and a descriptive commit message.
 

@@ -16,15 +16,15 @@ Task tool (superpowers:code-reviewer):
   HEAD_SHA: [current commit]
   DESCRIPTION: [task summary]
   IMPLEMENTATION_REPORT: Read full report at [path to .superpowers/reports/task-N-implementation.md]
-  SPEC_REVIEW_REPORT: Read spec review at [path to .superpowers/reports/task-N-spec-review.md]
 
   Write your detailed review to: .superpowers/reports/task-N-quality-review.md
 
   Return summary to orchestrator (under 10 lines):
-  - Strengths (1-2 sentences)
   - Issues: [count] critical, [count] important, [count] minor
   - Assessment: Ready to merge / Needs fixes
   - Report path: .superpowers/reports/task-N-quality-review.md
 ```
 
 **Code reviewer returns:** Summary with issue counts and verdict. Full review in report file.
+
+**Report structure:** Contains details for all identified issues. For each issue we have reasoning and pointers to file and lines. If no issues identified, write OK. 

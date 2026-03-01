@@ -63,16 +63,6 @@ Task tool (general-purpose):
     The implementer may have satisfied the task requirements but broken
     something else. Check:
 
-    **Run tests for modified files and dependents:**
-    - Identify which files were modified
-    - Find test files that cover those modules
-    - Find tests for code that imports from modified files
-    - Run those tests. Report any failures.
-
-    **Run lint/typecheck:**
-    - Run the project's lint and typecheck commands
-    - Report any errors, even if they seem unrelated to the task
-
     **Check blast radius:**
     - For each modified file, grep for other files that import from it
     - Did a changed export, renamed function, or modified type break a consumer?
@@ -85,13 +75,12 @@ Task tool (general-purpose):
 
     ## Output
 
-    Write your detailed review to `.superpowers/reports/task-N-spec-review.md`:
-    - Full analysis of spec compliance
-    - Full analysis of system integrity
+    Write details for all identified issues to `.superpowers/reports/task-N-spec-review.md`:
     - All issues with file:line references
+    - If no issues found, write OK
 
-    Return summary to orchestrator (under 10 lines):
-    - ✅ Spec compliant and system intact, OR
+    Return summary to orchestrator:
+    - ✅ Spec compliant and system intact, return just OK
     - ❌ Issues found: [count] spec issues, [count] integrity issues
-    - Report path: `.superpowers/reports/task-N-spec-review.md`
+    - Report path: `.superpowers/reports/task-N-spec-review.md`. 
 ```
