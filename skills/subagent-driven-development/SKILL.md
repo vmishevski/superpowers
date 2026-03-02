@@ -59,6 +59,12 @@ digraph process {
     "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
     "More tasks remain?" [shape=diamond];
     "Dispatch final code reviewer subagent for entire implementation" [shape=box];
+    "Plan has E2E Verification task?" [shape=diamond];
+    "Dispatch QA subagent (./qa-agent-prompt.md)" [shape=box];
+    "QA finds issues?" [shape=diamond];
+    "Dispatch Fixer subagent (./fixer-agent-prompt.md)" [shape=box];
+    "QA-Fix iterations < 3?" [shape=diamond];
+    "Report unfixed issues to user" [shape=box];
     "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
@@ -78,7 +84,16 @@ digraph process {
     "Mark task complete in TodoWrite" -> "More tasks remain?";
     "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
     "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final code reviewer subagent for entire implementation" -> "Use superpowers:finishing-a-development-branch";
+    "Dispatch final code reviewer subagent for entire implementation" -> "Plan has E2E Verification task?";
+    "Plan has E2E Verification task?" -> "Dispatch QA subagent (./qa-agent-prompt.md)" [label="yes"];
+    "Plan has E2E Verification task?" -> "Use superpowers:finishing-a-development-branch" [label="no"];
+    "Dispatch QA subagent (./qa-agent-prompt.md)" -> "QA finds issues?";
+    "QA finds issues?" -> "Use superpowers:finishing-a-development-branch" [label="no - PASS"];
+    "QA finds issues?" -> "Dispatch Fixer subagent (./fixer-agent-prompt.md)" [label="yes - ISSUES_FOUND"];
+    "Dispatch Fixer subagent (./fixer-agent-prompt.md)" -> "QA-Fix iterations < 3?";
+    "QA-Fix iterations < 3?" -> "Dispatch QA subagent (./qa-agent-prompt.md)" [label="yes - re-verify"];
+    "QA-Fix iterations < 3?" -> "Report unfixed issues to user" [label="no - max reached"];
+    "Report unfixed issues to user" -> "Use superpowers:finishing-a-development-branch";
 }
 ```
 
@@ -113,6 +128,8 @@ Subagents write detailed output to `.superpowers/reports/` and return short summ
 - `.superpowers/reports/task-N-implementation.md` — implementer's detailed report
 - `.superpowers/reports/task-N-spec-review.md` — spec reviewer's detailed report
 - `.superpowers/reports/task-N-quality-review.md` — code quality reviewer's report
+- `.superpowers/reports/e2e-qa-findings-N.md` — QA agent's findings (N = iteration number)
+- `.superpowers/reports/e2e-fix-report-N.md` — Fixer agent's repair report (N = iteration number)
 
 **Before dispatching the first task**, create the reports directory and activate orchestrator mode:
 ```bash
@@ -125,6 +142,8 @@ touch .superpowers/orchestrator-mode
 - `./implementer-prompt.md` - Dispatch implementer subagent
 - `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent
 - `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent
+- `./qa-agent-prompt.md` - Dispatch QA subagent for e2e browser verification
+- `./fixer-agent-prompt.md` - Dispatch Fixer subagent to resolve QA findings
 
 ## Example Workflow
 
@@ -195,7 +214,48 @@ Spec reviewer returns:
 [After all tasks]
 [Dispatch final code-reviewer]
 Done!
+
+[Plan has E2E Verification task? → Yes]
+
+E2E Verification Phase:
+
+[Dispatch QA subagent with E2E task text, Figma refs, design doc path, plan path]
+QA agent returns summary:
+  Status: ISSUES_FOUND
+  Findings: 1 critical, 2 medium
+  Report: .superpowers/reports/e2e-qa-findings-1.md
+
+[Dispatch Fixer subagent with QA findings path, design doc path, plan path]
+Fixer returns summary:
+  Status: ALL_FIXED
+  Fixed: 3/3
+  Report: .superpowers/reports/e2e-fix-report-1.md
+
+[Re-dispatch QA for verification pass]
+QA agent returns summary:
+  Status: PASS
+  Report: .superpowers/reports/e2e-qa-findings-2.md
+
+[Proceed to finishing-a-development-branch]
 ```
+
+## E2E Verification Phase
+
+After the final code review and before finishing-a-development-branch, check if the plan contains an E2E Verification task.
+
+**Orchestrator responsibilities:**
+1. Check if the plan has an E2E Verification task. If not, skip to finishing-a-development-branch.
+2. Dispatch QA subagent using `./qa-agent-prompt.md`. Provide: E2E task text, Figma references, design doc path, implementation plan path.
+3. Read QA summary:
+   - PASS → proceed to finishing-a-development-branch
+   - BLOCKED → report to user (environment likely not running), proceed to finishing-a-development-branch
+   - ISSUES_FOUND → continue to step 4
+4. Dispatch Fixer subagent using `./fixer-agent-prompt.md`. Provide: QA findings file path, design doc path, implementation plan path.
+5. Read Fixer summary:
+   - ALL_FIXED → re-dispatch QA for verification pass (loop back to step 2)
+   - PARTIAL_FIX → re-dispatch QA to verify fixes and re-assess remaining issues (loop back to step 2)
+   - BLOCKED → present blocking issues to user, proceed to finishing-a-development-branch
+6. Max 3 QA→Fix iterations. If issues remain after 3 iterations, present unfixed issues to user and proceed.
 
 ## Advantages
 
@@ -244,6 +304,9 @@ Done!
 - Let implementer self-review replace actual review (both are needed)
 - **Start code quality review before spec compliance is ✅** (wrong order)
 - Move to next task while either review has open issues
+- Skip e2e verification when plan includes an E2E Verification task (every phase matters)
+- Browse the app yourself as orchestrator (dispatch QA subagent instead)
+- Accept "close enough" on e2e findings without dispatching fixer
 
 **If subagent asks questions:**
 - Answer clearly and completely
