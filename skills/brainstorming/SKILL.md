@@ -72,7 +72,8 @@ digraph brainstorming {
 - Once you believe you understand what you're building, present the design
 - Scale each section to its complexity: a few sentences if straightforward, up to 200-300 words if nuanced
 - Ask after each section whether it looks right so far
-- Cover: architecture, components, data flow, error handling, testing
+- Cover: architecture, components, data flow, error handling, testing, e2e verification flows
+- For e2e verification flows: identify the critical user path(s) to verify in the browser, what "working" looks like visually, and any Figma design references for comparison. This section feeds into the implementation plan's E2E Verification task.
 - Be ready to go back and clarify if something doesn't make sense
 
 ## After the Design
