@@ -59,6 +59,28 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 These are not optional. If a plan author omits them, the plan is incomplete.
 
+## E2E Verification Task
+
+For plans with UI impact, include an E2E Verification task as the final task. This task is executed by the QA and Fixer subagents in subagent-driven-development, not by a regular implementer.
+
+```
+## Task N: E2E Verification
+
+**Depends on:** All previous tasks
+
+**Verification Flows:** [Reference the e2e verification flows from the design doc]
+
+**Figma References:** [File key, node IDs for relevant designs, or "None" if no Figma designs]
+
+**URLs to Verify:** [List of localhost URLs where the feature can be accessed]
+
+**Environment:** Local dev (FE on localhost:3000, BE on localhost:8000)
+
+**What "working" looks like:** [Description of expected visual and functional state]
+```
+
+This task does not follow the normal implementer → spec review → code quality review cycle. It is handled by the e2e verification phase in subagent-driven-development.
+
 ## Remember
 - Exact file paths always
 - Complete code in plan (not "add validation")
