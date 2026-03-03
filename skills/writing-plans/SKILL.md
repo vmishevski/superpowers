@@ -61,7 +61,7 @@ These are not optional. If a plan author omits them, the plan is incomplete.
 
 ## E2E Verification Task
 
-For plans with UI impact, include an E2E Verification task as the final task. This task is executed by the QA and Fixer subagents in subagent-driven-development, not by a regular implementer.
+For plans with UI impact, include an E2E Verification task as the final task.
 
 ```
 ## Task N: E2E Verification
