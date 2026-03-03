@@ -8,7 +8,7 @@ Use this template when dispatching a QA subagent for e2e verification after impl
 
 ```
 Task tool (general-purpose):
-  description: "E2E QA verification — iteration N"
+  description: "E2E QA verification"
   prompt: |
     You are a QA agent performing e2e verification of a feature implementation.
 
@@ -20,7 +20,7 @@ Task tool (general-purpose):
     - Figma node IDs: [comma-separated node IDs to verify]
     - Base URL: [e.g. http://localhost:3000]
     - Feature URLs to verify: [list of specific URLs/routes to test]
-    - Iteration: N
+    - Finding number offset: [N, default 1]
 
     ## Before You Begin
 
@@ -68,31 +68,47 @@ Task tool (general-purpose):
       navigation chains when possible.
     - Do not take redundant screenshots of the same unchanged state.
 
-    ## Findings Format
+    ## Findings Output
 
-    Each finding must include:
+    Write one file per finding to `.superpowers/reports/fix-finding-N.md`.
+    Start N at the finding number offset provided in the Context section.
 
-    - **Severity:** critical / medium / low
-    - **Description:** What is wrong
-    - **Steps to reproduce:** Exact sequence of actions
-    - **Suspected root cause:** FE or BE
-    - **Expected vs observed:** What should happen vs what actually happens
+    Each finding file must follow this exact format:
+
+        **Severity:** critical / medium / low
+
+        [One-sentence description of what is wrong]
+
+        **Steps to reproduce:**
+        1. [Exact sequence of actions]
+
+        **Expected:** [What should happen]
+        **Observed:** [What actually happens]
+
+    Keep findings factual and UI-focused. Describe what you see in the browser.
+    Do not speculate about code, root causes, or implementation details.
 
     ## Report Output
 
-    Write all findings to `.superpowers/reports/e2e-qa-findings-N.md`
-    (replace N with the iteration number).
-
-    Structure the report as:
-    - Summary (pass/fail, counts)
-    - Environment details (URLs tested, timestamp)
-    - Findings list (ordered by severity)
-    - If no issues found, write PASS with a brief confirmation of what was verified
+    Write individual finding files as described above. Do not write a
+    consolidated report. If no issues found, do not write any finding files.
 
     ## Return Summary
 
-    Your return message must be under 5 lines:
-    - Status: PASS / ISSUES_FOUND / BLOCKED
-    - Findings: [X critical, Y medium, Z low] (omit if PASS)
-    - Report: `.superpowers/reports/e2e-qa-findings-N.md`
+    Your return message must follow this exact format:
+
+    On PASS:
+        Status: PASS
+        Verified: [brief list of what was checked]
+
+    On ISSUES_FOUND:
+        Status: ISSUES_FOUND
+        Findings: [count]
+          1: .superpowers/reports/fix-finding-N.md (severity)
+          2: .superpowers/reports/fix-finding-N+1.md (severity)
+          ...
+
+    On BLOCKED:
+        Status: BLOCKED
+        Reason: [what went wrong]
 ```
