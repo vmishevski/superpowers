@@ -61,10 +61,12 @@ digraph process {
     "Dispatch final code reviewer subagent for entire implementation" [shape=box];
     "Plan has E2E Verification task?" [shape=diamond];
     "Dispatch QA subagent (./qa-agent-prompt.md)" [shape=box];
-    "QA finds issues?" [shape=diamond];
-    "Dispatch Fixer subagent (./fixer-agent-prompt.md)" [shape=box];
-    "QA-Fix iterations < 3?" [shape=diamond];
-    "Report unfixed issues to user" [shape=box];
+    "QA status?" [shape=diamond];
+    "Create fix task per QA finding" [shape=box];
+    "Dispatch implementer for each fix task (sequential)" [shape=box];
+    "Re-dispatch QA" [shape=box];
+    "Making progress and under safety cap?" [shape=diamond];
+    "Escalate to user" [shape=box];
     "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
@@ -87,13 +89,16 @@ digraph process {
     "Dispatch final code reviewer subagent for entire implementation" -> "Plan has E2E Verification task?";
     "Plan has E2E Verification task?" -> "Dispatch QA subagent (./qa-agent-prompt.md)" [label="yes"];
     "Plan has E2E Verification task?" -> "Use superpowers:finishing-a-development-branch" [label="no"];
-    "Dispatch QA subagent (./qa-agent-prompt.md)" -> "QA finds issues?";
-    "QA finds issues?" -> "Use superpowers:finishing-a-development-branch" [label="no - PASS"];
-    "QA finds issues?" -> "Dispatch Fixer subagent (./fixer-agent-prompt.md)" [label="yes - ISSUES_FOUND"];
-    "Dispatch Fixer subagent (./fixer-agent-prompt.md)" -> "QA-Fix iterations < 3?";
-    "QA-Fix iterations < 3?" -> "Dispatch QA subagent (./qa-agent-prompt.md)" [label="yes - re-verify"];
-    "QA-Fix iterations < 3?" -> "Report unfixed issues to user" [label="no - max reached"];
-    "Report unfixed issues to user" -> "Use superpowers:finishing-a-development-branch";
+    "Dispatch QA subagent (./qa-agent-prompt.md)" -> "QA status?";
+    "QA status?" -> "Use superpowers:finishing-a-development-branch" [label="PASS"];
+    "QA status?" -> "Create fix task per QA finding" [label="ISSUES_FOUND"];
+    "QA status?" -> "Escalate to user" [label="BLOCKED"];
+    "Create fix task per QA finding" -> "Dispatch implementer for each fix task (sequential)";
+    "Dispatch implementer for each fix task (sequential)" -> "Re-dispatch QA";
+    "Re-dispatch QA" -> "Making progress and under safety cap?";
+    "Making progress and under safety cap?" -> "Dispatch QA subagent (./qa-agent-prompt.md)" [label="yes"];
+    "Making progress and under safety cap?" -> "Escalate to user" [label="no"];
+    "Escalate to user" -> "Use superpowers:finishing-a-development-branch";
 }
 ```
 
@@ -128,8 +133,7 @@ Subagents write detailed output to `.superpowers/reports/` and return short summ
 - `.superpowers/reports/task-N-implementation.md` — implementer's detailed report
 - `.superpowers/reports/task-N-spec-review.md` — spec reviewer's detailed report
 - `.superpowers/reports/task-N-quality-review.md` — code quality reviewer's report
-- `.superpowers/reports/e2e-qa-findings-N.md` — QA agent's findings (N = iteration number)
-- `.superpowers/reports/e2e-fix-report-N.md` — Fixer agent's repair report (N = iteration number)
+- `.superpowers/reports/fix-finding-N.md` — QA agent's individual finding (N = finding number, persists across rounds)
 
 **Before dispatching the first task**, create the reports directory and activate orchestrator mode:
 ```bash
@@ -143,7 +147,6 @@ touch .superpowers/orchestrator-mode
 - `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent
 - `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent
 - `./qa-agent-prompt.md` - Dispatch QA subagent for e2e browser verification
-- `./fixer-agent-prompt.md` - Dispatch Fixer subagent to resolve QA findings
 
 ## Example Workflow
 
@@ -219,22 +222,28 @@ Done!
 
 E2E Verification Phase:
 
-[Dispatch QA subagent with E2E task text, Figma refs, design doc path, plan path]
+[Dispatch QA subagent with E2E task text, Figma refs, design doc path, plan path, finding offset 1]
 QA agent returns summary:
   Status: ISSUES_FOUND
-  Findings: 1 critical, 2 medium
-  Report: .superpowers/reports/e2e-qa-findings-1.md
+  Findings: 2
+    1: .superpowers/reports/fix-finding-1.md (critical)
+    2: .superpowers/reports/fix-finding-2.md (medium)
 
-[Dispatch Fixer subagent with QA findings path, design doc path, plan path]
-Fixer returns summary:
-  Status: ALL_FIXED
-  Fixed: 3/3
-  Report: .superpowers/reports/e2e-fix-report-1.md
+[Create 2 fix tasks in TodoWrite]
 
-[Re-dispatch QA for verification pass]
+[Read fix-finding-1.md, dispatch implementer with systematic-debugging]
+Implementer returns:
+  Status: DONE
+  Commit: abc1234
+
+[Read fix-finding-2.md, dispatch implementer with systematic-debugging]
+Implementer returns:
+  Status: DONE — ALREADY_RESOLVED (previous fix resolved this too)
+
+[Re-dispatch QA with finding offset 3]
 QA agent returns summary:
   Status: PASS
-  Report: .superpowers/reports/e2e-qa-findings-2.md
+  Verified: Form submission, success toast, redirect
 
 [Proceed to finishing-a-development-branch]
 ```
@@ -244,18 +253,52 @@ QA agent returns summary:
 After the final code review and before finishing-a-development-branch, check if the plan contains an E2E Verification task.
 
 **Orchestrator responsibilities:**
+
 1. Check if the plan has an E2E Verification task. If not, skip to finishing-a-development-branch.
-2. Dispatch QA subagent using `./qa-agent-prompt.md`. Provide: E2E task text, Figma references, design doc path, implementation plan path.
-3. Read QA summary:
+2. Initialize finding number offset to 1.
+3. Dispatch QA subagent using `./qa-agent-prompt.md`. Provide: E2E task text, Figma references, design doc path, implementation plan path, finding number offset.
+4. Read QA summary:
    - PASS → proceed to finishing-a-development-branch
    - BLOCKED → report to user (environment likely not running), proceed to finishing-a-development-branch
-   - ISSUES_FOUND → continue to step 4
-4. Dispatch Fixer subagent using `./fixer-agent-prompt.md`. Provide: QA findings file path, design doc path, implementation plan path.
-5. Read Fixer summary:
-   - ALL_FIXED → re-dispatch QA for verification pass (loop back to step 2)
-   - PARTIAL_FIX → re-dispatch QA to verify fixes and re-assess remaining issues (loop back to step 2)
-   - BLOCKED → present blocking issues to user, proceed to finishing-a-development-branch
-6. Max 3 QA→Fix iterations. If issues remain after 3 iterations, present unfixed issues to user and proceed.
+   - ISSUES_FOUND → continue to step 5
+5. Read finding file paths from QA summary. Create one fix task per finding in TodoWrite.
+6. For each fix task (sequentially):
+   - Read the finding file
+   - Dispatch implementer using `./implementer-prompt.md` with the fix task template (see below)
+   - All fix tasks get systematic-debugging — no exceptions
+   - Do NOT dispatch spec reviewer or code quality reviewer for fix tasks
+   - If implementer reports ALREADY_RESOLVED, mark task complete and move on
+7. After all fix tasks complete, update the finding number offset (previous offset + number of findings from last QA round).
+8. Progress check: compare current QA finding count against previous round.
+   - Fewer findings or different issues → making progress, re-dispatch QA (loop to step 3)
+   - Same finding count with same descriptions → stuck, escalate to user with finding file paths
+9. Safety cap: after 3 total QA dispatches, escalate to user regardless. This provides 2 fix rounds.
+
+### Fix task dispatch template
+
+When dispatching an implementer for a fix task, fill the implementer prompt's Task Description section with:
+
+```
+## Task Description
+
+Fix an issue found during e2e QA verification.
+
+[CONTENTS OF fix-finding-N.md pasted here]
+
+## Context
+
+This is a fix task from e2e QA. The feature is implemented but QA found
+issues in the browser.
+
+- Design doc: [path]
+- Implementation plan: [path]
+
+You MUST use the systematic-debugging skill to investigate before fixing.
+Do NOT patch symptoms. Find the root cause.
+
+If you cannot reproduce the issue after initial investigation, report
+ALREADY_RESOLVED and move on. Do not force a fix for a non-existent problem.
+```
 
 ## Advantages
 
@@ -306,7 +349,9 @@ After the final code review and before finishing-a-development-branch, check if 
 - Move to next task while either review has open issues
 - Skip e2e verification when plan includes an E2E Verification task (every phase matters)
 - Browse the app yourself as orchestrator (dispatch QA subagent instead)
-- Accept "close enough" on e2e findings without dispatching fixer
+- Dispatch spec/code-quality reviewers for fix tasks (re-QA is the verification)
+- Fix QA findings yourself instead of dispatching implementer subagents
+- Delete finding files between QA rounds (they persist for the record)
 
 **If subagent asks questions:**
 - Answer clearly and completely
