@@ -107,6 +107,37 @@ After writing the plan but BEFORE presenting it to the user, dispatch a devil's 
 
 Do NOT skip this step. Do NOT present the plan to the user before running the advocate.
 
+## Plan Summary for Approval
+
+After the advocate step, present the plan to the user as a **compact summary**. Do NOT dump the full plan. For each task show:
+
+- **Task title**
+- **One paragraph** describing what the task does and why
+
+Example format:
+
+```
+### Plan Summary
+
+**Task 1: Set up database migration for user preferences**
+Creates the migration to add a `preferences` JSONB column to the users table. This stores per-user feature flags and UI settings without requiring a separate table.
+
+**Task 2: Add GraphQL mutation for updating preferences**
+Implements the `updateUserPreferences` mutation with input validation. Enforces the allowed preference keys defined in the design doc.
+
+...
+```
+
+If there are open challenges from the advocate, present them after the summary.
+
+The user can:
+- **Approve** — proceed to execution
+- **Request changes** — revise specific tasks, re-run advocate if changes are significant
+- **Drill into details** — ask to see the full specification of any specific task
+- **Back to brainstorming** — a fundamental issue with the approach
+
+**The plan MUST NOT proceed to execution until the user explicitly approves the summary.**
+
 ## Execution Handoff
 
 After saving the plan, offer execution choice:
