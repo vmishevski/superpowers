@@ -96,47 +96,41 @@ After writing the plan but BEFORE presenting it to the user, dispatch a devil's 
 1. Dispatch advocate subagent with full plan text and design/requirements text
 2. Review advocate's output:
    - **Auto-fix items** (missing tasks, traceability gaps): Incorporate into the plan immediately
-   - **Open challenges** (questionable assumptions, alternative approaches): Present to user
+   - **Open challenges** (questionable assumptions, alternative approaches): Add to `## Open Challenges` section in the plan doc
 3. If auto-fixes were made, update the plan document
-4. Present the plan AND open challenges to the user with options:
-   - **Accept plan** — proceed to execution
-   - **Update plan** — revise based on challenges, re-run advocate if changes are significant
-   - **Back to brainstorming** — a challenge revealed a fundamental issue with the approach
+4. Inform the user the plan is ready for review, mention any open challenges
 
 **The plan is not complete until it has survived the advocate.**
 
 Do NOT skip this step. Do NOT present the plan to the user before running the advocate.
 
-## Plan Summary for Approval
+## Plan Review (document as source of truth)
 
-After the advocate step, present the plan to the user as a **compact summary**. Do NOT dump the full plan. For each task show:
+The plan file is the source of truth. Do NOT summarize or re-present the plan in chat — the user reads it in the file.
 
-- **Task title**
-- **One paragraph** describing what the task does and why
+After the advocate step, inform the user: **"Plan written to `docs/plans/<filename>.md`. Please review. There are N open challenges to consider."**
 
-Example format:
+### Iterative Refinement Loop
 
-```
-### Plan Summary
+**Before each interaction, re-read the plan file.** The user may have edited it directly.
 
-**Task 1: Set up database migration for user preferences**
-Creates the migration to add a `preferences` JSONB column to the users table. This stores per-user feature flags and UI settings without requiring a separate table.
+**If the user edited the plan:**
+- Diff against what you last wrote
+- Address the changes: update related sections for consistency
+- If there are changes which are not clear why they were made, present them to the user and clarify
+- Tell the user in chat what you updated
 
-**Task 2: Add GraphQL mutation for updating preferences**
-Implements the `updateUserPreferences` mutation with input validation. Enforces the allowed preference keys defined in the design doc.
+**The user can at any point:**
+- Edit the plan file directly (Claude detects on next re-read)
+- Give feedback in chat ("Task 3 should come before Task 2", "split Task 4 into two")
+- Add questions or comments to the Open Challenges section
+- Request to go back to brainstorming if a fundamental issue is found
 
-...
-```
+**Open Challenges:** Maintained in the plan doc. Claude adds challenges from the advocate. User can add their own. As challenges are resolved, remove them and update relevant tasks. If resolving a challenge requires significant plan changes, re-run the advocate.
 
-If there are open challenges from the advocate, present them after the summary.
+**Completion:** When the user has no more feedback and Open Challenges is empty, ask: **"Plan complete, no open challenges. Proceed to execution?"**
 
-The user can:
-- **Approve** — proceed to execution
-- **Request changes** — revise specific tasks, re-run advocate if changes are significant
-- **Drill into details** — ask to see the full specification of any specific task
-- **Back to brainstorming** — a fundamental issue with the approach
-
-**The plan MUST NOT proceed to execution until the user explicitly approves the summary.**
+**The plan MUST NOT proceed to execution until the user explicitly approves.**
 
 ## Execution Handoff
 
