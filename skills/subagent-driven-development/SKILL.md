@@ -5,9 +5,9 @@ description: Use when executing implementation plans with independent tasks in t
 
 # Subagent-Driven Development
 
-Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review.
+Execute plan by dispatching fresh subagent per task, with parallel review after each: spec compliance and code quality simultaneously.
 
-**Core principle:** Fresh subagent per task + two-stage review (spec then quality) = high quality, fast iteration
+**Core principle:** Fresh subagent per task + parallel review (spec + quality simultaneously) = high quality, fast iteration
 
 ## When to Use
 
@@ -32,7 +32,7 @@ digraph when_to_use {
 **vs. Executing Plans (parallel session):**
 - Same session (no context switch)
 - Fresh subagent per task (no context pollution)
-- Two-stage review after each task: spec compliance first, then code quality
+- Parallel review after each task: spec compliance and code quality simultaneously
 - Faster iteration (no human-in-loop between tasks)
 
 ## The Process
@@ -47,12 +47,13 @@ digraph process {
         "Implementer subagent asks questions?" [shape=diamond];
         "Answer questions, provide context" [shape=box];
         "Implementer subagent implements, tests, commits, self-reviews" [shape=box];
-        "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [shape=box];
-        "Spec reviewer subagent confirms code matches spec?" [shape=diamond];
-        "Implementer subagent fixes spec gaps" [shape=box];
-        "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [shape=box];
-        "Code quality reviewer subagent approves?" [shape=diamond];
-        "Implementer subagent fixes quality issues" [shape=box];
+        "Dispatch BOTH reviewers in parallel" [shape=box style=filled fillcolor=lightyellow];
+        "Spec reviewer (./spec-reviewer-prompt.md)" [shape=box];
+        "Code quality reviewer (./code-quality-reviewer-prompt.md)" [shape=box];
+        "Collect both review results" [shape=box];
+        "Both reviewers approve?" [shape=diamond];
+        "Implementer fixes all issues from both reviews" [shape=box];
+        "Re-dispatch only failed reviewer(s)" [shape=box];
         "Mark task complete in TodoWrite" [shape=box];
     }
 
@@ -74,15 +75,16 @@ digraph process {
     "Implementer subagent asks questions?" -> "Answer questions, provide context" [label="yes"];
     "Answer questions, provide context" -> "Dispatch implementer subagent (./implementer-prompt.md)";
     "Implementer subagent asks questions?" -> "Implementer subagent implements, tests, commits, self-reviews" [label="no"];
-    "Implementer subagent implements, tests, commits, self-reviews" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)";
-    "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" -> "Spec reviewer subagent confirms code matches spec?";
-    "Spec reviewer subagent confirms code matches spec?" -> "Implementer subagent fixes spec gaps" [label="no"];
-    "Implementer subagent fixes spec gaps" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [label="re-review"];
-    "Spec reviewer subagent confirms code matches spec?" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="yes"];
-    "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" -> "Code quality reviewer subagent approves?";
-    "Code quality reviewer subagent approves?" -> "Implementer subagent fixes quality issues" [label="no"];
-    "Implementer subagent fixes quality issues" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="re-review"];
-    "Code quality reviewer subagent approves?" -> "Mark task complete in TodoWrite" [label="yes"];
+    "Implementer subagent implements, tests, commits, self-reviews" -> "Dispatch BOTH reviewers in parallel";
+    "Dispatch BOTH reviewers in parallel" -> "Spec reviewer (./spec-reviewer-prompt.md)";
+    "Dispatch BOTH reviewers in parallel" -> "Code quality reviewer (./code-quality-reviewer-prompt.md)";
+    "Spec reviewer (./spec-reviewer-prompt.md)" -> "Collect both review results";
+    "Code quality reviewer (./code-quality-reviewer-prompt.md)" -> "Collect both review results";
+    "Collect both review results" -> "Both reviewers approve?";
+    "Both reviewers approve?" -> "Implementer fixes all issues from both reviews" [label="no"];
+    "Implementer fixes all issues from both reviews" -> "Re-dispatch only failed reviewer(s)";
+    "Re-dispatch only failed reviewer(s)" -> "Collect both review results";
+    "Both reviewers approve?" -> "Mark task complete in TodoWrite" [label="yes"];
     "Mark task complete in TodoWrite" -> "More tasks remain?";
     "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
     "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
@@ -150,7 +152,6 @@ Subagents write detailed output to `.superpowers/reports/` and return short summ
 **Before dispatching the first task**, create the reports directory and activate orchestrator mode:
 ```bash
 mkdir -p .superpowers/reports
-touch .superpowers/orchestrator-mode
 ```
 
 ## Prompt Templates
@@ -169,7 +170,6 @@ You: I'm using Subagent-Driven Development to execute this plan.
 [Extract all 5 tasks with full text and context]
 [Create TodoWrite with all tasks]
 [mkdir -p .superpowers/reports]
-[touch .superpowers/orchestrator-mode]
 
 Task 1: Hook installation script
 
@@ -183,19 +183,17 @@ Implementer returns summary:
   Tests: 5/5 passing
   Report: .superpowers/reports/task-1-implementation.md
 
-[Dispatch spec reviewer with task requirements + report path]
+[Dispatch BOTH reviewers in parallel with task requirements + report path]
 Spec reviewer returns:
   ✅ Spec compliant and system intact
   Report: .superpowers/reports/task-1-spec-review.md
-
-[Dispatch code quality reviewer with SHAs + report paths]
-Code reviewer returns:
+Code quality reviewer returns:
   Strengths: Good test coverage, clean implementation
   Issues: 0 critical, 0 important, 0 minor
   Assessment: Ready to merge
   Report: .superpowers/reports/task-1-quality-review.md
 
-[Mark Task 1 complete]
+[Both approved → Mark Task 1 complete]
 
 Task 2: Recovery modes
 
@@ -208,22 +206,25 @@ Implementer returns summary:
   Tests: 8/8 passing
   Report: .superpowers/reports/task-2-implementation.md
 
-[Dispatch spec reviewer with task requirements + report path]
+[Dispatch BOTH reviewers in parallel]
 Spec reviewer returns:
   ❌ Issues: 1 spec issue, 0 integrity issues
   Report: .superpowers/reports/task-2-spec-review.md
+Code quality reviewer returns:
+  Issues: 1 minor naming inconsistency
+  Report: .superpowers/reports/task-2-quality-review.md
 
-[Dispatch implementer to fix — pass spec review report path]
+[Spec failed + quality failed → dispatch implementer to fix all issues]
 Implementer returns summary:
   Status: DONE (fixes applied)
   Commit: ghi9012
   Report: .superpowers/reports/task-2-implementation-fix.md
 
-[Re-dispatch spec reviewer]
+[Re-dispatch both failed reviewers in parallel]
 Spec reviewer returns:
   ✅ Spec compliant and system intact
-
-[Dispatch code quality reviewer]
+Code quality reviewer returns:
+  ✅ Ready to merge
 ...
 
 [After all tasks]
@@ -333,7 +334,7 @@ ALREADY_RESOLVED and move on. Do not force a fix for a non-existent problem.
 
 **Quality gates:**
 - Self-review catches issues before handoff
-- Two-stage review: spec compliance, then code quality
+- Parallel review: spec compliance and code quality simultaneously
 - Review loops ensure fixes actually work
 - Spec compliance prevents over/under-building
 - Code quality ensures implementation is well-built
@@ -357,7 +358,6 @@ ALREADY_RESOLVED and move on. Do not force a fix for a non-existent problem.
 - Accept "close enough" on spec compliance (spec reviewer found issues = not done)
 - Skip review loops (reviewer found issues = implementer fixes = review again)
 - Let implementer self-review replace actual review (both are needed)
-- **Start code quality review before spec compliance is ✅** (wrong order)
 - Move to next task while either review has open issues
 - Skip e2e verification when plan includes an E2E Verification task (every phase matters)
 - Browse the app yourself as orchestrator (dispatch QA subagent instead)
@@ -370,10 +370,11 @@ ALREADY_RESOLVED and move on. Do not force a fix for a non-existent problem.
 - Provide additional context if needed
 - Don't rush them into implementation
 
-**If reviewer finds issues:**
-- Implementer (same subagent) fixes them
-- Reviewer reviews again
-- Repeat until approved
+**If either reviewer finds issues:**
+- Collect issues from both reviews
+- Dispatch implementer to fix all issues in one pass
+- Re-dispatch only the reviewer(s) that had issues
+- Repeat until both approve
 - Don't skip the re-review
 
 **If subagent fails task:**
