@@ -120,6 +120,18 @@ You are the orchestrator. Your job is routing and coordination. You dispatch sub
 
 **If you feel the urge to "just quickly fix" something, STOP. Dispatch a subagent.**
 
+## Model Routing
+
+When dispatching subagents, always set the `model` parameter on the Agent tool call:
+
+| Subagent | Model | Why |
+|----------|-------|-----|
+| Implementer | `sonnet` | Fast code generation and TDD cycles |
+| Spec reviewer | `opus` | Deep analysis needed for spec compliance |
+| Code quality reviewer | `opus` | Thorough review catches subtle issues |
+| Final code reviewer | `opus` | Whole-implementation review needs deep reasoning |
+| QA agent | `sonnet` | Browser interaction doesn't need deep reasoning |
+
 ## File-Based Handoff
 
 Subagents write detailed output to `.superpowers/reports/` and return short summaries.

@@ -88,27 +88,27 @@ This task does not follow the normal implementer → spec review → code qualit
 - Reference relevant skills with @ syntax
 - DRY, YAGNI, TDD, frequent commits
 
-## Plan Challenge (Devil's Advocate)
+## Plan Challenge (Plan Critic)
 
-After writing the plan but BEFORE presenting it to the user, dispatch a devil's advocate subagent using the template at `./advocate-prompt.md`.
+After writing the plan but BEFORE presenting it to the user, dispatch a plan critic subagent using the template at `./plan-critic-prompt.md`.
 
 **Process:**
-1. Dispatch advocate subagent with full plan text and design/requirements text
-2. Review advocate's output:
+1. Dispatch critic subagent with full plan text and design/requirements text
+2. Review critic's output:
    - **Auto-fix items** (missing tasks, traceability gaps): Incorporate into the plan immediately
    - **Open challenges** (questionable assumptions, alternative approaches): Add to `## Open Challenges` section in the plan doc
 3. If auto-fixes were made, update the plan document
 4. Inform the user the plan is ready for review, mention any open challenges
 
-**The plan is not complete until it has survived the advocate.**
+**The plan is not complete until it has survived the critic.**
 
-Do NOT skip this step. Do NOT present the plan to the user before running the advocate.
+Do NOT skip this step. Do NOT present the plan to the user before running the critic.
 
 ## Plan Review (document as source of truth)
 
 The plan file is the source of truth. Do NOT summarize or re-present the plan in chat — the user reads it in the file.
 
-After the advocate step, inform the user: **"Plan written to `docs/plans/<filename>.md`. Please review. There are N open challenges to consider."**
+After the critic step, inform the user: **"Plan written to `docs/plans/<filename>.md`. Please review. There are N open challenges to consider."**
 
 ### Iterative Refinement Loop
 
@@ -126,7 +126,7 @@ After the advocate step, inform the user: **"Plan written to `docs/plans/<filena
 - Add questions or comments to the Open Challenges section
 - Request to go back to brainstorming if a fundamental issue is found
 
-**Open Challenges:** Maintained in the plan doc. Claude adds challenges from the advocate. User can add their own. As challenges are resolved, remove them and update relevant tasks. If resolving a challenge requires significant plan changes, re-run the advocate.
+**Open Challenges:** Maintained in the plan doc. Claude adds challenges from the critic. User can add their own. As challenges are resolved, remove them and update relevant tasks. If resolving a challenge requires significant plan changes, re-run the critic.
 
 **Completion:** When the user has no more feedback and Open Challenges is empty, ask: **"Plan complete, no open challenges. Proceed to execution?"**
 

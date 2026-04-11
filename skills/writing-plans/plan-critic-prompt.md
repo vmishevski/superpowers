@@ -1,6 +1,6 @@
-# Plan Advocate Prompt Template
+# Plan Critic Prompt Template
 
-Use this template to dispatch a devil's advocate subagent after writing a plan but before presenting it to the user.
+Use this template to dispatch a plan critic subagent after writing a plan but before presenting it to the user.
 
 **Purpose:** Challenge the plan's approach, verify traceability from requirements to tasks, and check coherence across tasks.
 
@@ -8,7 +8,7 @@ Use this template to dispatch a devil's advocate subagent after writing a plan b
 Task tool (general-purpose):
   description: "Challenge plan for [feature name]"
   prompt: |
-    You are the devil's advocate for an implementation plan. Your job is to find
+    You are the plan critic for an implementation plan. Your job is to find
     problems BEFORE implementation begins, when they are cheapest to fix.
 
     ## The Plan
